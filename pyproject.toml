@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "payuz-fastapi"
+version = "0.1.0"
+description = "Async FastAPI-only payment gateway integration for Uzbekistan (Payme, Click, Uzum, Paynet, Octo)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "HoPHNi" }]
+keywords = ["payme", "click", "uzum", "paynet", "octo", "fastapi", "uzbekistan", "payments"]
+
+dependencies = [
+    "fastapi>=0.100",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.0",
+    "httpx>=0.24",
+    "python-multipart>=0.0.6",
+    "requests>=2.28",
+    "environs>=9.5",
+]
+
+[project.urls]
+Repository = "https://github.com/HoPHNiDev/payuz-fastapi"
+
+[tool.setuptools.packages.find]
+include = ["payuz*"]
+
+[tool.setuptools.package-data]
+payuz = ["py.typed"]
