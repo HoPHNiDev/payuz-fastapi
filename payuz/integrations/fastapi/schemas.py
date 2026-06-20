@@ -4,7 +4,7 @@ FastAPI schemas for payuz.
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PaymentTransactionBase(BaseModel):
@@ -46,11 +46,7 @@ class PaymentTransaction(PaymentTransactionBase):
         None, description="Cancellation timestamp"
     )
 
-    class Config:
-        """
-        Pydantic configuration.
-        """
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaymentTransactionList(BaseModel):
