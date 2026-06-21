@@ -43,6 +43,7 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         payme_key: str,
         account_model: Any,
         account_field: str = "id",
+        account_lookup_field: Optional[str] = None,
         amount_field: str = "amount",
         one_time_payment: bool = True,
         transaction_model: Any = PaymentTransaction,
@@ -53,9 +54,11 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
             payme_id: Payme merchant ID.
             payme_key: Payme merchant key (Basic-auth password).
             account_model: The host project's account/order model class.
-            account_field: ``account[...]`` field name Payme sends; also the host model column
-                to match it against. The special value ``"order_id"`` resolves the lookup to the
-                model's ``id`` primary key (the value is coerced to int/UUID as needed).
+            account_field: ``account[...]`` field name Payme sends.
+            account_lookup_field: host model column to match the account value against. Defaults
+                to ``account_field`` (with the legacy ``"order_id"`` → ``id`` shortcut). Set it
+                explicitly to decouple the provider's account key from the column — e.g. a Payme
+                key ``"order_id"`` carrying your public order slug → ``account_lookup_field="public_id"``.
             amount_field: Attribute on the account holding the expected amount (in som).
             one_time_payment: Validate the amount strictly (single-payment accounts).
             transaction_model: Payment-transaction model (defaults to the standalone model).
@@ -65,6 +68,7 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         self.payme_key = payme_key
         self.account_model = account_model
         self.account_field = account_field
+        self.account_lookup_field = account_lookup_field
         self.amount_field = amount_field
         self.one_time_payment = one_time_payment
         self.transaction_model = transaction_model
@@ -134,7 +138,9 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         if not account_value:
             raise AccountNotFound("Account not found in parameters")
 
-        lookup_field = "id" if self.account_field == "order_id" else self.account_field
+        lookup_field = self.account_lookup_field or (
+            "id" if self.account_field == "order_id" else self.account_field
+        )
         account_value = coerce_account_value(lookup_field, account_value)
 
         res = await self.db.execute(

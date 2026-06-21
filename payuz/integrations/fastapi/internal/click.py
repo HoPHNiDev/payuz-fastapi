@@ -7,7 +7,7 @@ public subclass consumers extend to override the async event hooks.
 
 import hashlib
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import select
@@ -30,6 +30,7 @@ class ClickWebhookHandlerInternal:
         account_model: Any,
         commission_percent: float = 0.0,
         account_field: str = "id",
+        account_lookup_field: Optional[str] = None,
         amount_field: str = "amount",
         one_time_payment: bool = True,
         transaction_model: Any = PaymentTransaction,
@@ -40,6 +41,7 @@ class ClickWebhookHandlerInternal:
         self.account_model = account_model
         self.commission_percent = commission_percent
         self.account_field = account_field
+        self.account_lookup_field = account_lookup_field
         self.amount_field = amount_field
         self.one_time_payment = one_time_payment
         self.transaction_model = transaction_model
@@ -208,8 +210,9 @@ class ClickWebhookHandlerInternal:
             )
 
     async def _find_account(self, merchant_trans_id: str) -> Any:
-        # account_field="order_id" resolves to the host model's `id` column (mirrors Payme).
-        lookup_field = "id" if self.account_field == "order_id" else self.account_field
+        lookup_field = self.account_lookup_field or (
+            "id" if self.account_field == "order_id" else self.account_field
+        )
         account_value = coerce_account_value(lookup_field, merchant_trans_id)
 
         res = await self.db.execute(
