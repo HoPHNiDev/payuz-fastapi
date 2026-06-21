@@ -147,7 +147,9 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         return account
 
     def _validate_amount(self, account: Any, amount: Any) -> bool:
-        expected_amount = Decimal(getattr(account, self.amount_field)) * 100
+        # str() round-trip: a Float account column would otherwise inherit binary
+        # representation error (Decimal(1234.56) != 1234.56) → false InvalidAmount.
+        expected_amount = Decimal(str(getattr(account, self.amount_field))) * 100
         received_amount = Decimal(amount)
         if self.one_time_payment and expected_amount != received_amount:
             raise InvalidAmount(

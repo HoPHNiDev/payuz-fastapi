@@ -147,7 +147,9 @@ class ClickWebhookHandlerInternal:
                     await transaction.mark_as_paid(self.db)
                     await self.successfully_payment(params, transaction)
                 else:
-                    await transaction.mark_as_cancelled(self.db, reason=f"Error code: {error}")
+                    # reason is the Click error code (int) — the `reason` column is Integer;
+                    # a formatted string would raise on commit. Note text stays in extra_data.
+                    await transaction.mark_as_cancelled(self.db, reason=error)
                     await self.cancelled_payment(params, transaction)
 
                 return {
