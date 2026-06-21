@@ -28,7 +28,7 @@ from payuz.core.exceptions import (
 )
 
 from ..models import PaymentTransaction
-from .common import json_response
+from .common import coerce_account_value, json_response
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,9 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
             payme_id: Payme merchant ID.
             payme_key: Payme merchant key (Basic-auth password).
             account_model: The host project's account/order model class.
-            account_field: ``account[...]`` field name Payme sends (and model field to match).
+            account_field: ``account[...]`` field name Payme sends; also the host model column
+                to match it against. The special value ``"order_id"`` resolves the lookup to the
+                model's ``id`` primary key (the value is coerced to int/UUID as needed).
             amount_field: Attribute on the account holding the expected amount (in som).
             one_time_payment: Validate the amount strictly (single-payment accounts).
             transaction_model: Payment-transaction model (defaults to the standalone model).
@@ -133,8 +135,7 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
             raise AccountNotFound("Account not found in parameters")
 
         lookup_field = "id" if self.account_field == "order_id" else self.account_field
-        if lookup_field == "id" and isinstance(account_value, str) and account_value.isdigit():
-            account_value = int(account_value)
+        account_value = coerce_account_value(lookup_field, account_value)
 
         res = await self.db.execute(
             select(self.account_model).filter_by(**{lookup_field: account_value})

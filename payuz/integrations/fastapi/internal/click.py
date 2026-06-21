@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import PaymentTransaction
+from .common import coerce_account_value
 
 logger = logging.getLogger(__name__)
 
@@ -207,12 +208,12 @@ class ClickWebhookHandlerInternal:
             )
 
     async def _find_account(self, merchant_trans_id: str) -> Any:
-        account_value: Any = merchant_trans_id
-        if self.account_field == "id" and isinstance(account_value, str) and account_value.isdigit():
-            account_value = int(account_value)
+        # account_field="order_id" resolves to the host model's `id` column (mirrors Payme).
+        lookup_field = "id" if self.account_field == "order_id" else self.account_field
+        account_value = coerce_account_value(lookup_field, merchant_trans_id)
 
         res = await self.db.execute(
-            select(self.account_model).filter_by(**{self.account_field: account_value})
+            select(self.account_model).filter_by(**{lookup_field: account_value})
         )
         account = res.scalar_one_or_none()
         if not account:
